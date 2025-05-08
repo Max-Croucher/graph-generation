@@ -1,18 +1,9 @@
 # graph-generation
 A repository of scripts and plugins for the generation and filtering of planar graphs.
 
-This repository is currently incomplete. As-is and uncommented plugins are available, but more refined copies and other useful tools will be made available soon.
+This repository is currently incomplete. Included tools:
+* plugin.c
 
-Messages printed to stdout aren't always useful and command-line switches aren't always intuitive.
+# plugin.c
 
-Build the binaries with the makefile.
-
-# Hamiltonian Filtering
-To filter graphs for Hamiltonicity, use the Plantri plugin hamiltonian-filter.c
-
-This version of hamiltonian-filter.c, which is included in this repository. Eventually, I will upload a version that runs on an unmodified version.
-
-# Long Path Filtering
-To filter graphs for longest path length, use the Plantri plugin long_path_filter.c
-
-This version uses an unmodified Plantri, which you will need to get yourself, at https://users.cecs.anu.edu.au/~bdm/plantri/. I think there's an off-by-one error somewhere when manually specifying the length of paths to filter by. All will be fixed after my break.
+This plugin is designed for use with Brinkmann and McKay's graph generation tool Plantri, which is available at  https://users.cecs.anu.edu.au/~bdm/plantri/. This plugin implements a variety of graph filtering methods, to filter graphs for structural properties including Hamiltonicity and longest path length. It is implemented for the purposes of filtering polyhedral graphs, and thus other classes of planar graphs may not be correctly filtered. To compile Plantri with this plugin, the supplied makefile can be used.

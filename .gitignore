@@ -1,0 +1,32 @@
+#Ignore VSCODE
+.vscode/*
+
+
+*.ignoreme
+
+# skip all plantri and associated files
+plantri.c
+plantri
+plantri_filter
+*.pl
+*.pl.txt
+*.out
+*.stderr
+*.stdout
+
+# skip all binaries
+!/**/
+*.exe
+
+# skip python cache files
+*.pyc
+
+# skip all gzips
+*.tar.gz
+
+# skip all LaTeX helper files
+*.aux
+*.synctex.gz
+
+# skip all converted eps images
+*converted_to.pdf
