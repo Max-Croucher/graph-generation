@@ -84,6 +84,7 @@ static int current_path_length=0;
 static uint64_t total_found=0;
 static uint64_t snake_found=0;
 static uint64_t floyd_found=0;
+static uint64_t graphs_seen=0;
 static uint64_t graphs_checked=0;
 static uint64_t path_length_table[256];
 static uint64_t search_for_path=0;
@@ -421,7 +422,6 @@ static int snake_recurse_path(uint64_t *path_vertices, int first_vertex,
 to hamitlonian_snake()
 */
 {
-	graphs_checked++;
 	EDGE *e, *elast;
 	
 	int path_length = 0;
@@ -483,11 +483,14 @@ static int has_long_path()
 	snake_recurse_path() if the snake heuristic is to be used, and then the exhaustive
 	long_path_loop if it fails.*/
 {
-
+	graphs_checked++;
 	if (snake_depth == 0) {
 		for (int i = 0; i<nv; i++) {
 			uint64_t recursive_path = 1ULL << i;
-			if (long_path_loop(recursive_path, i, 1)) return 1;
+			if (long_path_loop(recursive_path, i, 1)) {
+				total_found++;
+				return 1;
+			}
 		}
 		return 0;
 	}
@@ -504,11 +507,15 @@ static int has_long_path()
 										 parent, snake_depth, first_vertex);
 	if (finally_ham) {
 		snake_found++;
+		total_found++;
 		return 1;
 	} else {
 		for (int i = 0; i<((float)nv-1); i++) {
 			uint64_t recursive_path = 1ULL << i;
-			if (long_path_loop(recursive_path, i, 1)) return 1;
+			if (long_path_loop(recursive_path, i, 1)) {
+				total_found++;
+				return 1;
+			}
 		}
 		return 0;
 	}
@@ -525,6 +532,7 @@ static int plugin_filter(int nbtot, int nbop, int doflip)
 	updates some stats
 */
 {
+	graphs_seen++;
 	int result;
 	if (do_ham) { // Hamiltonian mode
 		if (max_rec_depth != -1) {
@@ -555,6 +563,10 @@ static int plugin_filter(int nbtot, int nbop, int doflip)
 	} else if (do_diam) { // Diameter mode
 		graphs_checked++;
 		int diameter = floyd_warshall();
+		if (diameter == do_diam) {
+			total_found++;
+			floyd_found++;
+		}
 		result = diameter == do_diam;
 	} else { // Longest path mode
 		int long_path_loop = 0;
@@ -573,8 +585,8 @@ static int plugin_filter(int nbtot, int nbop, int doflip)
 
 	current_path_length = 0;
 	if (make_table && result) path_length_table[get_longest_path()]++;
-	if (graphs_checked % 10000000 == 0) {
-		printf("Checked %ld graphs. %ld graph(s) found.\n", graphs_checked, 
+	if (graphs_seen % 10000000 == 0) {
+		printf("Seen %ld graphs. Checked %ld graphs. Found %ld graphs.\n", graphs_seen, graphs_checked, 
 			   invert_out? total_found : graphs_checked - total_found);
 		fflush(stdout);
 	}
@@ -603,9 +615,10 @@ static void summary()
 */
 {
 	printf("\n");
+	printf("Seen %ld graphs.\n", graphs_seen);
+	printf("Filters applied to %ld graphs.\n", graphs_checked);
 	if (snake_depth > 0) printf("Graphs found using Snake: %ld.\n", snake_found);
 	if (floyd_flag) printf("Graphs found using Floyd: %ld.\n", floyd_found);
-	printf("Filters applied to %ld graphs.\n", graphs_checked);
 	if (make_table && (oswitch ? totalout_op : totalout)) {
 		printf("\nPath Length Table:\nlen : Number of graphs with this length\n");
 		for (int i=0; i < 256; i++) {
