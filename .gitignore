@@ -1,32 +1,34 @@
 #Ignore VSCODE
 .vscode/*
 
-
 *.ignoreme
+temp
+
+!.gitignore
+
+# skip all non-binaries in stellations/bin
+stellations/bin/*
+!stellations/bin/*.c
 
 # skip all plantri and associated files
-plantri.c
-plantri
-plantri_filter
+plantri*
 *.pl
 *.pl.txt
 *.out
 *.stderr
 *.stdout
+*.paths
+
+# re-enable pl files in example dir
+!/stellations/example_graphs/*
 
 # skip all binaries
 !/**/
 *.exe
 
 # skip python cache files
+__pycache__
 *.pyc
 
 # skip all gzips
 *.tar.gz
-
-# skip all LaTeX helper files
-*.aux
-*.synctex.gz
-
-# skip all converted eps images
-*converted_to.pdf
