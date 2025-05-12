@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS= -O4
 LDFLAGS=
-VERSION=54
+VERSION=1
 
 all: plantri plantri_filter stellation
 stellation: all_ham_cycles all_longest_paths
