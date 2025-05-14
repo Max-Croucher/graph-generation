@@ -56,4 +56,5 @@ Next, the following features are available:
 In addition to this, the tool can be used with different modes or features:
 * Running the script with `--index <integer n>` or `-i <integer n>` will cause the `n+1`th graph in the given planar file to be displayed instead of the default 0.
 * Running the script with `--longest` or `-l` will cause the tool to run in Longest Path Mode, in which the edge colourings reflect the configurations of longest paths in the graph instead of Hamiltonian cycles. Vertices that are the endpoint of at least one longest path will be coloured green.
+* Running the script with `--nothing` or `-n` will cause the tool to run without any path/cycle generation. This is useful for generating planar files for graphs too large to check for structural properties interactively.
 * Running the script with `--output <filename>` or `-o <filename>` will cause the script to save the current graph onscreen to the provided file whenever a graph is stellated or has an element deleted. The index of the currently-displayed graph is displayed so the program can be easily restarted with the desired graph using the `--index` argument.

@@ -203,55 +203,63 @@ def get_faces(adj):
     return faces
 
 
-def get_coloured_edges(path_file_name, count_cycles=False, get_frequencies=False, longpaths=False):
+def get_coloured_edges(path_file_name, count_cycles=False, get_frequencies=False, path_mode="H"):
     """Use a pre-generated path file to find the set of edges that lie on some Hamiltonian Cycle"""
-    with open(path_file_name, encoding='utf-8') as path_file:
-        num_cycles = 0
-        freqs = dict()
-        coloured_edges = dict()
-        def next_line():
-            _curr = path_file.readline().strip()
-            if _curr == '':
-                raise StopIteration
-            return _curr
-        try:
-            current_line = next_line()
-            while True:
-                found_cycles = set()
-                num_cycles = 0
-                if current_line != "graph = {":
-                    raise ValueError(f"Error. Expected 'graph = {{'. Got {current_line}")
-                while current_line != "}":
-                    current_line = next_line()
+    if path_mode == "N":
+        output = [{}]
+        if count_cycles:
+            output.append(0)
+        if get_frequencies:
+            output.append({})
+        yield output
+    else:
+        with open(path_file_name, encoding='utf-8') as path_file:
+            num_cycles = 0
+            freqs = dict()
+            coloured_edges = dict()
+            def next_line():
+                _curr = path_file.readline().strip()
+                if _curr == '':
+                    raise StopIteration
+                return _curr
+            try:
                 current_line = next_line()
-                coloured_edges = dict()
-                while current_line != "graph = {":
-                    vertices = current_line.split(' - ')
-                    if get_frequencies:
-                        min_v_index = vertices.index(min(vertices))
-                        if longpaths:
-                            signature = tuple(vertices)
-                        else:
-                            signature = tuple(vertices[min_v_index:] + vertices[:min_v_index])
-                        if signature in found_cycles:
-                            current_line = next_line()
-                            continue
-                        rev_vert = list(reversed(vertices))
-                        min_v_index = rev_vert.index(min(rev_vert))
-                        if longpaths:
-                            signature = tuple(rev_vert)
-                        else:
-                            signature = tuple(rev_vert[min_v_index:] + rev_vert[:min_v_index])
-                        if signature in found_cycles:
-                            current_line = next_line()
-                            continue
-                        found_cycles.add(signature)
-                    num_cycles += 1
-                    for i in range(longpaths, len(vertices)):
-                        e = tuple(sorted([int(vertices[i-1])+1, int(vertices[i])+1]))
-                        freqs[e] = freqs.get(e, 0) + 1
-                        coloured_edges[e] = 'r'
+                while True:
+                    found_cycles = set()
+                    num_cycles = 0
+                    if current_line != "graph = {":
+                        raise ValueError(f"Error. Expected 'graph = {{'. Got {current_line}")
+                    while current_line != "}":
+                        current_line = next_line()
                     current_line = next_line()
+                    coloured_edges = dict()
+                    while current_line != "graph = {":
+                        vertices = current_line.split(' - ')
+                        if get_frequencies:
+                            min_v_index = vertices.index(min(vertices))
+                            if path_mode == "L":
+                                signature = tuple(vertices)
+                            else:
+                                signature = tuple(vertices[min_v_index:] + vertices[:min_v_index])
+                            if signature in found_cycles:
+                                current_line = next_line()
+                                continue
+                            rev_vert = list(reversed(vertices))
+                            min_v_index = rev_vert.index(min(rev_vert))
+                            if path_mode == "L":
+                                signature = tuple(rev_vert)
+                            else:
+                                signature = tuple(rev_vert[min_v_index:] + rev_vert[:min_v_index])
+                            if signature in found_cycles:
+                                current_line = next_line()
+                                continue
+                            found_cycles.add(signature)
+                        num_cycles += 1
+                        for i in range(path_mode=="L", len(vertices)):
+                            e = tuple(sorted([int(vertices[i-1])+1, int(vertices[i])+1]))
+                            freqs[e] = freqs.get(e, 0) + 1
+                            coloured_edges[e] = 'r'
+                        current_line = next_line()
 
                 outdata = [coloured_edges]
                 if count_cycles:
@@ -259,50 +267,53 @@ def get_coloured_edges(path_file_name, count_cycles=False, get_frequencies=False
                 if get_frequencies:
                     outdata.append(freqs)
                 yield tuple(outdata)
-        except StopIteration:
-            outdata = [coloured_edges]
-            if count_cycles:
-                outdata.append(num_cycles)
-            if get_frequencies:
-                outdata.append(freqs)
-            yield tuple(outdata)
-        except ValueError:
-            return
+            except StopIteration:
+                outdata = [coloured_edges]
+                if count_cycles:
+                    outdata.append(num_cycles)
+                if get_frequencies:
+                    outdata.append(freqs)
+                yield tuple(outdata)
+            except ValueError:
+                return
 
 
-def get_common_edges(path_file_name, longpaths=False):
+def get_common_edges(path_file_name, path_mode="L"):
     """Use a pre-generated path file to find the set of edges that lie on every Hamiltonian Cycle"""
-    with open(path_file_name, encoding='utf-8') as path_file:
-        common_edges = None
-        def next_line():
-            _curr = path_file.readline().strip()
-            if _curr == '':
-                raise StopIteration
-            return _curr
-        try:
-            current_line = next_line()
-            while True:
-                if current_line != "graph = {":
-                    raise ValueError(f"Error. Expected 'graph = {{'. Got {current_line}")
-                while current_line != "}":
-                    current_line = next_line()
+    if path_mode == "N":
+        yield {}
+    else:
+        with open(path_file_name, encoding='utf-8') as path_file:
+            common_edges = None
+            def next_line():
+                _curr = path_file.readline().strip()
+                if _curr == '':
+                    raise StopIteration
+                return _curr
+            try:
                 current_line = next_line()
-                common_edges = None
-                while current_line != "graph = {":
-                    vertices = current_line.split(' - ')
-                    edges = {tuple(sorted(
-                        [int(vertices[i-1])+1, int(vertices[i])+1]
-                    ))for i in range(longpaths, len(vertices))}
-                    if common_edges is None:
-                        common_edges = edges
-                    else:
-                        common_edges &= edges
+                while True:
+                    if current_line != "graph = {":
+                        raise ValueError(f"Error. Expected 'graph = {{'. Got {current_line}")
+                    while current_line != "}":
+                        current_line = next_line()
                     current_line = next_line()
+                    common_edges = None
+                    while current_line != "graph = {":
+                        vertices = current_line.split(' - ')
+                        edges = {tuple(sorted(
+                            [int(vertices[i-1])+1, int(vertices[i])+1]
+                        ))for i in range(path_mode=="L", len(vertices))}
+                        if common_edges is None:
+                            common_edges = edges
+                        else:
+                            common_edges &= edges
+                        current_line = next_line()
+                    yield set() if common_edges is None else common_edges
+            except StopIteration:
                 yield set() if common_edges is None else common_edges
-        except StopIteration:
-            yield set() if common_edges is None else common_edges
-        except ValueError:
-            return
+            except ValueError:
+                return
 
 
 def get_endpoints(path_file_name):
@@ -454,31 +465,32 @@ def get_contained_face(coords, faces, point):
     return faces[-1]
 
 
-def generate_edge_data(adj, longpaths=False):
+def generate_edge_data(adj, path_mode="L"):
     """Get edge colouring data from an adjacency list.
        Involves storing the graph to a temporary file"""
-    with PLWriter(TEMP.joinpath("temp.pl")) as pl_obj:
-        write_graph(pl_obj, adj)
-    with open(TEMP.joinpath("temp.paths"), 'w', encoding="utf-8") as path_obj:
-        process = subprocess.Popen(
-            [(PATH_GENERATOR if longpaths else CYCLE_GENERATOR),str(TEMP.joinpath("temp.pl"))],
-            stdout=path_obj
-        )
-        process.wait()
+    if path_mode != "N":
+        with PLWriter(TEMP.joinpath("temp.pl")) as pl_obj:
+            write_graph(pl_obj, adj)
+        with open(TEMP.joinpath("temp.paths"), 'w', encoding="utf-8") as path_obj:
+            process = subprocess.Popen(
+                [(PATH_GENERATOR if path_mode=="L" else CYCLE_GENERATOR),str(TEMP.joinpath("temp.pl"))],
+                stdout=path_obj
+            )
+            process.wait()
     coloured_edges, num_cycles, e_freqs = next(get_coloured_edges(
         TEMP.joinpath("temp.paths"),
         count_cycles=True,
         get_frequencies=True,
-        longpaths=longpaths
+        path_mode=path_mode
     ))
     common_edges = next(
-        get_common_edges(TEMP.joinpath("temp.paths"), longpaths=longpaths)
+        get_common_edges(TEMP.joinpath("temp.paths"), path_mode=path_mode)
     )
     print(f"{len(coloured_edges)} red")
     print(f"{len(common_edges)} blue")
     for edge in common_edges:
         coloured_edges[edge] = 'cyan'
-    if not longpaths:
+    if path_mode != "L":
         endpoints=set()
     else:
         endpoints = next(get_endpoints(TEMP.joinpath("temp.paths")))
@@ -548,7 +560,7 @@ def draw_from_coords(adj, v_pos, colours=None, e_freqs=None, num_cycles=None, do
     return v_obj, t_objs, e_objs, e_text_objs
 
 
-def draw_interactive(n, output=None, longpaths=False):
+def draw_interactive(n, output=None, path_mode='H'):
     """Draw an interactive matplotlib window"""
     fig = plt.figure(figsize=(10, 10))
 
@@ -578,7 +590,7 @@ def draw_interactive(n, output=None, longpaths=False):
 
     # Get data about current graph
     faces = list(get_faces(n))
-    e_cols, num_cycles, e_freqs, endpoints = generate_edge_data(n, longpaths=longpaths)
+    e_cols, num_cycles, e_freqs, endpoints = generate_edge_data(n, path_mode=path_mode)
     initial_pos = {k: np.array(v) for k, v in nx.planar_layout(g).items()}
     pos = scale_unit(initial_pos)
 
@@ -590,13 +602,15 @@ def draw_interactive(n, output=None, longpaths=False):
         pl_object = pl_worker.__enter__()
         write_graph(pl_object, n)
         save_message = f"Most recent graph was saved to {output.name} at index {output_index}"
-    if longpaths:
+    if path_mode == 'L':
         path_name = f"Longest Path{plural(num_cycles)} with length {get_longest_path_length()}"
-    else:
+    elif path_mode == "H":
         path_name = f"Hamiltonian Cycle{plural(num_cycles)}"
+    else:
+        path_name = ''
     save_text = plt.text(
         -1.2,-1.6,
-        f"Current graph has {num_cycles} {path_name}. {save_message}",
+        '' if path_mode == 'N' else f"Current graph has {num_cycles} {path_name}. {save_message}",
         fontsize=12
     )
 
@@ -791,7 +805,7 @@ def draw_interactive(n, output=None, longpaths=False):
                 plt.pause(0.05)
 
                 # Slow edge colouring function
-                new_e_cols, new_num_cycles, new_e_freqs, endpoints = generate_edge_data(new_n, longpaths=longpaths)
+                new_e_cols, new_num_cycles, new_e_freqs, endpoints = generate_edge_data(new_n, path_mode=path_mode)
 
                 # If the stellated face was the outer face
                 if face == outer_face:
@@ -866,7 +880,7 @@ def draw_interactive(n, output=None, longpaths=False):
                     plt.pause(1/FRAMERATE) # framerate
 
                     # Slow edge colouring function
-                    new_e_cols, new_num_cycles, new_e_freqs, endpoints = generate_edge_data(new_n, longpaths=longpaths)
+                    new_e_cols, new_num_cycles, new_e_freqs, endpoints = generate_edge_data(new_n, path_mode=path_mode)
 
                     # Get new graph data
                     new_faces = list(get_faces(new_n))
@@ -954,12 +968,14 @@ def draw_interactive(n, output=None, longpaths=False):
         # Update output flavour text if needed
         if output:
             save_message = f"Most recent graph is saved to {output.name}, index {output_index}"
-        if longpaths:
+        if path_mode == "L":
             path_name = f"Longest Path{plural(num_cycles)} with length {get_longest_path_length()}"
-        else:
+        elif path_mode == "H":
             path_name = f"Hamiltonian Cycle{plural(num_cycles)}"
+        else:
+            path_name = ""
         save_text.set_text(
-            f"Current graph has {num_cycles} {path_name}. {save_message}"
+            '' if path_mode == 'N' else f"Current graph has {num_cycles} {path_name}. {save_message}"
         )
 
         # Update back and forward button quantities
@@ -974,7 +990,7 @@ def draw_interactive(n, output=None, longpaths=False):
     if output:
         pl_worker.__exit__()
 
-def initiate(pl_name, graph_index=0, output=None, longpaths=False):
+def initiate(pl_name, graph_index=0, output=None, path_mode='H'):
     """Initiate the interactive loop"""
     graph_obj = read_graphs(pl_name)
     for _ in range(graph_index):
@@ -987,7 +1003,7 @@ def initiate(pl_name, graph_index=0, output=None, longpaths=False):
     while True:
         # Loop until plot closed
         print(graph_adj)
-        draw_interactive(deepcopy(graph_adj), output=output, longpaths=longpaths)
+        draw_interactive(deepcopy(graph_adj), output=output, path_mode=path_mode)
         if not EVENT_STATES['HOME_BUTTON']:
             break
         EVENT_STATES['HOME_BUTTON'] = False
@@ -997,7 +1013,7 @@ def main(arguments):
     """Main for cli"""
     index = 0
     output = None
-    longpaths = False
+    path_mode = 'H'
     try:
         pl_name = Path(arguments[1])
         for i in range(1, len(arguments)):
@@ -1006,11 +1022,13 @@ def main(arguments):
             if arguments[i].lower() in ["--output", "-o"]:
                 output = Path(arguments[i+1])
             if arguments[i].lower() in ["--longpaths", "-l"]:
-                longpaths = True
+                path_mode = 'L'
+            if arguments[i].lower() in ["--nothing", "-n"]:
+                path_mode = 'N'
     except IndexError:
-        print(f"Usage: python3 {arguments[0]} <pl_name> [--index x] [--output filename] [--longpaths]")
+        print(f"Usage: python3 {arguments[0]} <pl_name> [--index x] [--output filename] [--longpaths | --nothing]")
     else:
-        initiate(pl_name, graph_index=index, output=output, longpaths=longpaths)
+        initiate(pl_name, graph_index=index, output=output, path_mode=path_mode)
 
 if __name__ == "__main__":
     main(argv)
