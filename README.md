@@ -3,16 +3,40 @@ A repository of scripts and plugins for the generation and filtering of planar g
 
 This repository is currently incomplete. Included tools:
 * plugin.c
+* pathfinder_partial.c
 * stellations/bin/all_ham_cycles.c
 * stellations/bin/all_longest_paths.c
 * stellations/read_pl.py
 * stellations/draw_pl.py
 * stellations/interactive_stellations.py
 
+The C files can be compiled with the included makefile.
+
 # plugin.c
 
 This plugin is designed for use with Brinkmann and McKay's graph generation tool Plantri, which is available at  https://users.cecs.anu.edu.au/~bdm/plantri/. This plugin implements a variety of graph filtering methods, to filter graphs for structural properties including Hamiltonicity and longest path length. It is implemented for the purposes of filtering polyhedral graphs, and thus other classes of planar graphs may not be correctly filtered. To compile Plantri with this plugin, the supplied makefile can be used.
 Full documentation for this plugin is included in the source code.
+
+# pathfinder_partial.c
+
+This program is written to iterate over the graphs in a planar code file (typically .pl), as output by the planar graph generation tool Plantri. For each graph in the given file, the program will compute the longest paths in this graph that can be generated with a given vertex as an endpoint. This tool also supports a range of constraints, including the blacklisting of vertices, or requirement that paths contain particular vertices or paths. By default, the program will display information on an encountered path if it is longer than any path found so far. This allows useful information to be obtained even if the program is prematurely halted.
+
+Usage: `./pathfinder_partial <pl-filename> <start-vertex>`
+
+The following optional arguments are also available:
+* `--help` prints a help message and exits.
+* `--halt-on-trace`: Halts the graph generation procedure for a graph if a trace is found.
+* `--print`: Prints a generated path if it is equally as long as the longest path found so far, instead of only printing generated paths if they're longer.
+* `--used-edges`: Prints an adjacency matrix of all edges used by any longest path. Vertex pairs that include a blacklisted vertex are displayed as an asterisk \"*\". Vertex pairs that do not correspond to an edge are displayed with a period \".\". Vertex pairs that correspond to an edge are displayed as a \"1\" or \"0\" based on whether or not there exists a longest path that uses this edge.
+* `--blacklist-vertices [sequence of vertices]`: Specifies a sequence of vertices that cannot be present in a longest path.
+* `--require-vertices [sequence of vertices]`: Specifies a sequence of vertices that must be present in a longest path.
+* `--require-edges [sequence of hyphen-delimetered sequences of vertices]`: Specifies a sequence of paths that must be present in a longest path. These required paths must be vertex disjoint and cannot involve blacklisted vertices.
+
+Example:
+
+`./pathfinder_partial example_graph.pl 0 --blacklist-vertices 2 14 --require-vertices 3 --require-paths 0-4-15-29-7 11-27-16`
+
+This command would find the longest paths in each graph given in `example_graph.pl` that has vertex 0 as an endpoint, provided each path does not use vertices 2 or 14, does use vertex 3, and uses the sub-paths 0-4-15-29-7 and 11-27-16.
 
 # stellations/bin/all_ham_cycles.c
 
